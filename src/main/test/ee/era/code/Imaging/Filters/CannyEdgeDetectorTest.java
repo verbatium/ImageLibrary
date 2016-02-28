@@ -2,7 +2,14 @@ package ee.era.code.Imaging.Filters;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import java.awt.image.BufferedImage;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
 public class CannyEdgeDetectorTest {
     @Test
     public void testOrientation() throws Exception {
@@ -73,4 +80,43 @@ public class CannyEdgeDetectorTest {
         Assert.assertEquals(0, CannyEdgeDetector.getOrientation(Math.PI * angle * 16.0)); //180
 
     }
+
+    @Test
+    public void testByteComparsion() throws Exception {
+        byte thresholdMax = (byte) 128;
+        byte thresholdMin = (byte) 10;
+        Assert.assertFalse((thresholdMin) < (thresholdMax));
+        Assert.assertTrue((thresholdMin & 0xFF) < (thresholdMax & 0xFF));
+
+    }
+
+    @Test
+    public void DontRunGausianBlurIfDisabled() throws Exception {
+        BufferedImage img = new BufferedImage(10, 10, BufferedImage.TYPE_3BYTE_BGR);
+        CannyEdgeDetector cannyEdgeDetector = spy(new CannyEdgeDetector(10, 100, 0));
+        img = cannyEdgeDetector.filter(img, null);
+        verify(cannyEdgeDetector, times(0)).getGaussianFilter();
+    }
+
+    @Test
+    public void DisableGausianBlurIfSigmaIs0() throws Exception {
+        CannyEdgeDetector cannyEdgeDetector = new CannyEdgeDetector(10, 100, 0);
+        Assert.assertFalse(cannyEdgeDetector.isGaussianFilterEnabled());
+    }
+
+    @Test
+    public void testThatGausianFilterEnabledWhenDefaultConstructorUsed() throws Exception {
+        CannyEdgeDetector cannyEdgeDetector = new CannyEdgeDetector();
+        Assert.assertTrue("By default it is enabled", cannyEdgeDetector.isGaussianFilterEnabled());
+    }
+
+    @Test
+    public void RunGausianBlurIfNotdisabled() throws Exception {
+        BufferedImage img = new BufferedImage(10, 10, BufferedImage.TYPE_3BYTE_BGR);
+        CannyEdgeDetector cannyEdgeDetector = spy(new CannyEdgeDetector());
+        img = cannyEdgeDetector.filter(img, null);
+        verify(cannyEdgeDetector, times(1)).getGaussianFilter();
+    }
+
+
 }

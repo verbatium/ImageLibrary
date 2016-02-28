@@ -14,13 +14,19 @@ public class CannyEdgeDetector implements BufferedImageOp {
 
     private GreyscaleFilter greyscaleFilter = new GreyscaleFilter();
     private GaussianBlur gaussianFilter = new GaussianBlur();
+    private boolean isGaussianFilterEnabled = true;
     private int lowThreshold = 20;
     private int highThreshold = 100;
 
     public CannyEdgeDetector(int highThreshold, int lowThreshold, float sigma) {
         this.highThreshold = highThreshold;
         this.lowThreshold = lowThreshold;
-        gaussianFilter.setSigma(sigma);
+        if (sigma == 0) {
+            isGaussianFilterEnabled = false;
+        } else {
+            getGaussianFilter().setSigma(sigma);
+        }
+
     }
 
     public CannyEdgeDetector() {
@@ -45,6 +51,18 @@ public class CannyEdgeDetector implements BufferedImageOp {
         return orientation;
     }
 
+    boolean isGaussianFilterEnabled() {
+        return isGaussianFilterEnabled;
+    }
+
+    GaussianBlur getGaussianFilter() {
+        return gaussianFilter;
+    }
+
+    GreyscaleFilter getGreyscaleFilter() {
+        return greyscaleFilter;
+    }
+
     public BufferedImage filter(BufferedImage srcImage, BufferedImage destImage) {
         // processing start and stop X,Y positions
         int startX = 1;
@@ -62,8 +80,10 @@ public class CannyEdgeDetector implements BufferedImageOp {
 
         // STEP 1 - blur image
         BufferedImage blurredImage;
-        blurredImage = greyscaleFilter.filter(srcImage, null);
-        blurredImage = gaussianFilter.filter(blurredImage, null);
+        blurredImage = getGreyscaleFilter().filter(srcImage, null);
+        blurredImage = isGaussianFilterEnabled() ?
+                getGaussianFilter().filter(blurredImage, null) : blurredImage;
+
         // orientation array
         byte[] orients = new byte[width * height];
 
@@ -94,13 +114,13 @@ public class CannyEdgeDetector implements BufferedImageOp {
         for (int y = startY; y < stopY; y++) {
             // for each pixel
             for (int x = startX; x < stopX; x++, srcIdx++, p++) {
-                gx = src[srcIdx - srcStride + 1] + src[srcIdx + srcStride + 1]
-                        - src[srcIdx - srcStride - 1] - src[srcIdx + srcStride - 1]
-                        + 2 * (src[srcIdx + 1] - src[srcIdx + -1]);
+                gx = (src[srcIdx - srcStride + 1] & 0xFF) + (src[srcIdx + srcStride + 1] & 0xFF)
+                        - (src[srcIdx - srcStride - 1] & 0xFF) - (src[srcIdx + srcStride - 1] & 0xFF)
+                        + 2 * ((src[srcIdx + 1] & 0xFF) - (src[srcIdx + -1] & 0xFF));
 
-                gy = src[srcIdx - srcStride - 1] + src[srcIdx - srcStride + 1]
-                        - src[srcIdx + srcStride - 1] - src[srcIdx - srcStride + 1]
-                        + 2 * (src[srcIdx - srcStride] - src[srcIdx + srcStride]);
+                gy = (src[srcIdx - srcStride - 1] & 0xFF) + (src[srcIdx - srcStride + 1] & 0xFF)
+                        - (src[srcIdx + srcStride - 1] & 0xFF) - (src[srcIdx - srcStride + 1] & 0xFF)
+                        + 2 * ((src[srcIdx - srcStride] & 0xFF) - (src[srcIdx + srcStride] & 0xFF));
                 // get gradient value
                 gradients[x][y] = (float) Math.sqrt(gx * gx + gy * gy);
                 if (gradients[x][y] > maxGradient) {
@@ -155,20 +175,20 @@ public class CannyEdgeDetector implements BufferedImageOp {
         for (int y = startY; y < stopY; y++) {
             // for each pixel
             for (int x = startX; x < stopX; x++, dstIndx++) {
-                if (dst[dstIndx] < highThreshold) {
-                    if (dst[dstIndx] < lowThreshold) {
+                if ((dst[dstIndx] & 0xFF) < highThreshold) {
+                    if ((dst[dstIndx] & 0xFF) < lowThreshold) {
                         // non edge
                         dst[dstIndx] = 0;
                     } else {
                         // check 8 neighboring pixels
-                        if ((dst[dstIndx - 1] < highThreshold) &&
-                                (dst[dstIndx + 1] < highThreshold) &&
-                                (dst[dstIndx - dstStride - 1] < highThreshold) &&
-                                (dst[dstIndx - dstStride] < highThreshold) &&
-                                (dst[dstIndx - dstStride + 1] < highThreshold) &&
-                                (dst[dstIndx + dstStride - 1] < highThreshold) &&
-                                (dst[dstIndx + dstStride] < highThreshold) &&
-                                (dst[dstIndx + dstStride + 1] < highThreshold)) {
+                        if (((dst[dstIndx - 1] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx + 1] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx - dstStride - 1] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx - dstStride] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx - dstStride + 1] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx + dstStride - 1] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx + dstStride] & 0xFF) < highThreshold) &&
+                                ((dst[dstIndx + dstStride + 1] & 0xFF) < highThreshold)) {
                             dst[dstIndx] = 0;
                         } else {
                             dst[dstIndx] = -1;

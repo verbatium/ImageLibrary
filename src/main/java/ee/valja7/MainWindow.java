@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -25,10 +26,11 @@ public class MainWindow extends JFrame {
     private JSlider sliderHighGain;
     private JTextField textHighGain;
     private JPanelWithImage panel2;
+    private JButton saveBtn;
     private Double sigma;
     private Integer lowGain;
     private Integer highGain;
-    private NumberMapper sigmaMapper = new NumberMapper(0.000000010, 25.0, 0.0, 255.);
+    private NumberMapper sigmaMapper = new NumberMapper(0.0, 25.5, 0.0, 255.);
     private NumberMapper lowGainMapper = new NumberMapper(0.0, 255.0, 0.0, 255.0);
     private NumberMapper HighGainMapper = new NumberMapper(0.0, 255.0, 0.0, 255.0);
     private BufferedImage img;
@@ -85,10 +87,22 @@ public class MainWindow extends JFrame {
                 panel2.repaint();
             }
         });
+        saveBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                BufferedImage img = panel2.getImage();
+                File outputfile = new File("target/filtered.png");
+                try {
+                    ImageIO.write(img, "png", outputfile);
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
         setVisible(true);
 
         try {
-            img = ImageIO.read(Main.class.getResourceAsStream("/image.jpg"));
+            img = ImageIO.read(Main.class.getResourceAsStream("/2root.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }
