@@ -1,7 +1,6 @@
 package ee.era.code.Imaging.Filters;
 
-import static java.lang.Math.cos;
-import static java.lang.StrictMath.sin;
+import sun.awt.image.ByteInterleavedRaster;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -15,7 +14,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import sun.awt.image.ByteInterleavedRaster;
+import static java.lang.Math.cos;
+import static java.lang.StrictMath.sin;
 
 /**
  * Created by valeri on 28.02.16.
@@ -113,11 +113,11 @@ public class HoughFilter implements BufferedImageOp {
 						double distance = (sin(theta) * y + cos(theta) * x) * stepPerPixel;
 
 						Integer d = (int)Math.round(distance);
-						/*
-						 * phaseMap[f*RMax*stepPerPixel+d]++; // увеличиваем счетчик для этой точки фазового
-						 * пространства. max = Math.max(phaseMap[f*RMax*stepPerPixel+d],max);
-						 */
-						for (r = 0; r < RMax * stepPerPixel; r++) { // перебираем все возможные расстояния от начала
+                        Double v = f * RMax * stepPerPixel + d;
+                        phaseMap[v.intValue()]++; // увеличиваем счетчик для этой точки фазового пространства.
+                        // max = Math.max(phaseMap[f*RMax*stepPerPixel+d],max);
+                             /*
+                        for (r = 0; r < RMax * stepPerPixel; r++) { // перебираем все возможные расстояния от начала
 																	// координат
 							// Если решение уравнения достаточно хорошее (точность больше заданой)
 							if (
@@ -130,7 +130,7 @@ public class HoughFilter implements BufferedImageOp {
 								max = Math.max(phaseMap[v.intValue()], max);
 							}
 						}
-
+                        */
 					}
 				}
 			}
