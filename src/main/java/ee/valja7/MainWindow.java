@@ -1,17 +1,18 @@
 package ee.valja7;
 
-import ee.era.code.Imaging.Filters.CannyEdgeDetector;
-
-import javax.imageio.ImageIO;
-import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+
+import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import ee.era.code.Imaging.Filters.CannyEdgeDetector;
 
 /**
  * Created by valeri on 27.02.16.
@@ -102,7 +103,8 @@ public class MainWindow extends JFrame {
         setVisible(true);
 
         try {
-            img = ImageIO.read(Main.class.getResourceAsStream("/2root.png"));
+			img = ImageIO.read(Main.class.getResourceAsStream("/star.bmp"));
+			// img = ImageIO.read(new File("target/Hough.png"));
         } catch (IOException e) {
             e.printStackTrace();
         }

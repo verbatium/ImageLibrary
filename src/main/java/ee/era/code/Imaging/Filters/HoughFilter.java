@@ -1,6 +1,7 @@
 package ee.era.code.Imaging.Filters;
 
-import sun.awt.image.ByteInterleavedRaster;
+import static java.lang.Math.cos;
+import static java.lang.StrictMath.sin;
 
 import java.awt.*;
 import java.awt.geom.Point2D;
@@ -10,138 +11,158 @@ import java.awt.image.BufferedImageOp;
 import java.awt.image.ColorModel;
 import java.awt.image.WritableRaster;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static java.lang.Math.cos;
-import static java.lang.StrictMath.sin;
+import sun.awt.image.ByteInterleavedRaster;
 
 /**
  * Created by valeri on 28.02.16.
  */
 public class HoughFilter implements BufferedImageOp {
-    public static final double GRAD_TO_RAD = Math.PI / 180.0f;
-    private double accuracy = 0.1f;
-    private int stepPerGrad = 1;
-    private int stepPerPixel = 1;
 
-    public static <K, V extends Comparable<? super V>> Map<K, V>
-    sortByValue(Map<K, V> map) {
-        Map<K, V> result = new LinkedHashMap<>();
-        Stream<Map.Entry<K, V>> st = map.entrySet().stream();
+	public static final double GRAD_TO_RAD = Math.PI / 180.0f;
+	private double accuracy;
+	private double stepPerGrad;
+	private double stepPerPixel;
 
-        st.sorted(Comparator.comparing(e -> e.getValue()))
-                .forEachOrdered(e -> result.put(e.getKey(), e.getValue()));
+	public HoughFilter() {
+		stepPerGrad = 1.0f;
+		stepPerPixel = 1.0f;
+		accuracy = 0.1f;
+	}
 
-        return result;
-    }
+	public HoughFilter(double accuracy, double stepPerGrad, double stepPerPixel) {
+		this.accuracy = accuracy;
+		this.stepPerGrad = stepPerGrad;
+		this.stepPerPixel = stepPerPixel;
+	}
 
-    @Override
-    public BufferedImage filter(BufferedImage src, BufferedImage dest) {
-        int width = src.getWidth();
-        int height = src.getHeight();
+	public static <K, V extends Comparable<? super V>> Map<K, V>
+			sortByValue(Map<K, V> map) {
+		Map<K, V> result = new LinkedHashMap<>();
+		Stream<Map.Entry<K, V>> st = map.entrySet().stream();
 
-        // максимальное расстояние от начала координат - это длина диагонали
-        int RMax = (int) Math.round(Math.sqrt(width * width + height * height));
+		st.sorted(Comparator.comparing(e -> e.getValue()))
+				.forEachOrdered(e -> result.put(e.getKey(), e.getValue()));
 
-        // картинка для хранения фазового пространства Хафа (r, f)
-        // 0 < r < RMax
-        // 0 < f < 2*PI
-        BufferedImage phase = new BufferedImage(RMax * stepPerPixel, 180 * stepPerGrad, BufferedImage.TYPE_BYTE_GRAY);
-        int x = 0, y = 0, r = 0, f = 0;
-        double theta = 0;
-        ByteInterleavedRaster bin = (ByteInterleavedRaster) src.getData();
-        byte[] dataStorage = bin.getDataStorage();
+		return result;
+	}
 
-        ByteInterleavedRaster phaseData = (ByteInterleavedRaster) phase.getData();
-        byte[] dstData = phaseData.getDataStorage();
+	public double getStepPerPixel() {
+		return stepPerPixel;
+	}
 
-        int[] phaseMap = new int[dstData.length];
-        int max = 0;
+	public void setStepPerPixel(int stepPerPixel) {
+		this.stepPerPixel = stepPerPixel;
+	}
 
-        // пробегаемся по пикселям изображения контуров
-        for (y = 0; y < height; y++) {
-            int ptr = (y * bin.getScanlineStride());
-            for (x = 0; x < width; x++) {
-                if ((dataStorage[ptr + x] & 0xFF) > 0) { // это пиксель контура?
-                    // рассмотрим все возможные прямые, которые могут
-                    // проходить через эту точку
+	public double getAccuracy() {
+		return accuracy;
+	}
 
+	public void setAccuracy(double accuracy) {
+		this.accuracy = accuracy;
+	}
 
-                    for (f = 0; f < 180 * stepPerGrad; f++) { //перебираем все возможные углы наклона
+	public double getStepPerGrad() {
+		return stepPerGrad;
+	}
 
-                        double grad = (double) f / stepPerGrad;
-                        theta = GRAD_TO_RAD * grad; // переводим градусы в радианы
-                        double dY = sin(theta) * y;
-                        double dX = cos(theta) * x;
-                        double distance = (dY + dX) * stepPerPixel;
+	public void setStepPerGrad(int stepPerGrad) {
+		this.stepPerGrad = stepPerGrad;
+	}
 
-                        Integer d = (int) Math.round(distance);
-/*
-                        phaseMap[f*RMax*stepPerPixel+d]++; // увеличиваем счетчик для этой точки фазового пространства.
-                        max = Math.max(phaseMap[f*RMax*stepPerPixel+d],max);
-                        */
-                        for (r = 0; r < RMax * stepPerPixel; r++) { // перебираем все возможные расстояния от начала координат
+	@Override
+	public BufferedImage filter(BufferedImage src, BufferedImage dest) {
 
-                            // Если решение уравнения достаточно хорошее (точность больше заданой)
+		int width = src.getWidth();
+		int height = src.getHeight();
 
-                            if (
-                                //d==r
+		// максимальное расстояние от начала координат - это длина диагонали
+		int RMax = (int)Math.round(Math.sqrt(width * width + height * height));
 
-                                    Math.abs(distance - r) < accuracy
-                                    ) {
-                                phaseMap[f * RMax * stepPerPixel + r]++; // увеличиваем счетчик для этой точки фазового пространства.
-                                max = Math.max(phaseMap[f * RMax * stepPerPixel + r], max);
-                            }
-                        }
+		// картинка для хранения фазового пространства Хафа (r, f)
+		// 0 < r < RMax
+		// 0 < f < 2*PI
+		BufferedImage phase = new BufferedImage( (int)Math.round(RMax * stepPerPixel), (int)Math.round(180 * stepPerGrad), BufferedImage.TYPE_BYTE_GRAY);
+		int x = 0, y = 0, r = 0, f = 0;
+		double theta = 0;
+		ByteInterleavedRaster bin = (ByteInterleavedRaster)src.getData();
+		byte[] dataStorage = bin.getDataStorage();
 
+		ByteInterleavedRaster phaseData = (ByteInterleavedRaster)phase.getData();
+		byte[] dstData = phaseData.getDataStorage();
 
-                    }
-                }
-                //if (max>0)  break;
-            }
-            //if (max>0)  break;
-        }
-        //equalize
-        Map<Integer, Integer> toSort = new HashMap<>();
+		int[] phaseMap = new int[dstData.length];
+		int max = 0;
 
-        for (int i = 0; i < phaseMap.length; i++) {
-            if (phaseMap[i] > max / 3)
-                toSort.put(i, phaseMap[i]);
-            dstData[i] = (byte) (phaseMap[i] * 255 / max);
-        }
-        toSort = sortByValue(toSort);
-        for (Integer i : toSort.keySet()) {
-            int freq = (i / (RMax * stepPerPixel));
-            int dist = i - freq * (RMax * stepPerPixel);
-            System.out.printf("%d, %d, %d, %d%n", i, freq, dist, toSort.get(i));
-        }
+		// пробегаемся по пикселям изображения контуров
+		for (y = 0; y < height; y++) {
+			int ptr = (y * bin.getScanlineStride());
+			for (x = 0; x < width; x++) {
+				if ((dataStorage[ptr + x] & 0xFF) > 0) { // это пиксель контура?
+					// рассмотрим все возможные прямые, которые могут
+					// проходить через эту точку
 
-        WritableRaster wr = phaseData.createCompatibleWritableRaster(phase.getWidth(), phase.getHeight());
-        wr.setDataElements(0, 0, phase.getWidth(), phase.getHeight(), dstData);
-        phase.setData(wr);
-        return phase;
-    }
+					for (f = 0; f < 180 * stepPerGrad; f++) { // перебираем все возможные углы наклона
 
-    @Override
-    public Rectangle2D getBounds2D(BufferedImage dataStorage) {
-        return null;
-    }
+						double grad = (double)f / stepPerGrad;
+						theta = GRAD_TO_RAD * grad; // переводим градусы в радианы
+						double distance = (sin(theta) * y + cos(theta) * x) * stepPerPixel;
 
-    @Override
-    public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel destCM) {
-        return null;
-    }
+						Integer d = (int)Math.round(distance);
+						/*
+						 * phaseMap[f*RMax*stepPerPixel+d]++; // увеличиваем счетчик для этой точки фазового
+						 * пространства. max = Math.max(phaseMap[f*RMax*stepPerPixel+d],max);
+						 */
+						for (r = 0; r < RMax * stepPerPixel; r++) { // перебираем все возможные расстояния от начала
+																	// координат
+							// Если решение уравнения достаточно хорошее (точность больше заданой)
+							if (
+								d == r
+								//Math.abs(distance - r) < accuracy
+							) {
+								Double v = f * RMax * stepPerPixel + r;
+								phaseMap[v.intValue()]++; // увеличиваем счетчик для этой точки фазового
+																			// пространства.
+								max = Math.max(phaseMap[v.intValue()], max);
+							}
+						}
 
-    @Override
-    public Point2D getPoint2D(Point2D srcPt, Point2D dstPt) {
-        return null;
-    }
+					}
+				}
+			}
+		}
+		for (int i = 0; i < phaseMap.length; i++) {
 
-    @Override
-    public RenderingHints getRenderingHints() {
-        return null;
-    }
+			dstData[i] = (byte)(Math.round((double)phaseMap[i] * 255 / RMax));
+		}
+
+		WritableRaster wr = phaseData.createCompatibleWritableRaster(phase.getWidth(), phase.getHeight());
+		wr.setDataElements(0, 0, phase.getWidth(), phase.getHeight(), dstData);
+		phase.setData(wr);
+		return phase;
+	}
+
+	@Override
+	public Rectangle2D getBounds2D(BufferedImage dataStorage) {
+		return null;
+	}
+
+	@Override
+	public BufferedImage createCompatibleDestImage(BufferedImage src, ColorModel destCM) {
+		return null;
+	}
+
+	@Override
+	public Point2D getPoint2D(Point2D srcPt, Point2D dstPt) {
+		return null;
+	}
+
+	@Override
+	public RenderingHints getRenderingHints() {
+		return null;
+	}
 }
