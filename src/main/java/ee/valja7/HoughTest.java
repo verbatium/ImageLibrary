@@ -1,15 +1,18 @@
 package ee.valja7;
 
-import ee.era.code.Imaging.Filters.CannyEdgeDetector;
-import ee.era.code.Imaging.Filters.HoughFilter;
-import sun.awt.image.ByteInterleavedRaster;
-
-import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import sun.awt.image.ByteInterleavedRaster;
+import ee.era.code.Imaging.Filters.CannyEdgeDetector;
+import ee.era.code.Imaging.Filters.GaussianBlur;
+import ee.era.code.Imaging.Filters.HoughFilter;
+import ee.era.code.Imaging.Filters.SoebelFilter;
 
 /**
  * Created by valeri on 28.02.16.
@@ -51,8 +54,24 @@ public class HoughTest {
             System.out.printf("angle = %2f°, distance = %2f, line weight = %2d%n", freq, dist, Math.round((double) toSort.get(i)
                     * rMax / 255));
 		}
-
 		outputfile = new File("target/Hough.png");
 		ImageIO.write(houghMap, "png", outputfile);
+		GaussianBlur gaussianBlur = new GaussianBlur();
+		gaussianBlur.setSigma(3);
+		gaussianBlur.setSize(1);
+		houghMap = gaussianBlur.filter(houghMap, null);
+		outputfile = new File("target/HoughBlured.png");
+		ImageIO.write(houghMap, "png", outputfile);
+
+		SoebelFilter soebelFilter = new SoebelFilter(SoebelFilter.HORIZONTAL);
+		houghMap = soebelFilter.filter(houghMap, null);
+		outputfile = new File("target/SoebelH.png");
+		ImageIO.write(houghMap, "png", outputfile);
+
+		soebelFilter = new SoebelFilter(SoebelFilter.VERTICAL);
+		houghMap = soebelFilter.filter(houghMap, null);
+		outputfile = new File("target/SoebelV.png");
+		ImageIO.write(houghMap, "png", outputfile);
+
     }
 }
