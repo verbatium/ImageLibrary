@@ -191,11 +191,11 @@ public class CannyEdgeDetector implements BufferedImageOp {
                                 ((dst[dstIndx + dstStride + 1] & 0xFF) < highThreshold)) {
                             dst[dstIndx] = 0;
                         } else {
-                            dst[dstIndx] = -1;
+                            //dst[dstIndx] = -1;
                         }
                     }
                 } else {
-                    dst[dstIndx] = -1;
+                    //dst[dstIndx] = -1;
                 }
             }
             dstIndx += dstOffset;

@@ -114,23 +114,7 @@ public class HoughFilter implements BufferedImageOp {
 
 						Integer d = (int)Math.round(distance);
                         Double v = f * RMax * stepPerPixel + d;
-                        phaseMap[v.intValue()]++; // увеличиваем счетчик для этой точки фазового пространства.
-                        // max = Math.max(phaseMap[f*RMax*stepPerPixel+d],max);
-                             /*
-                        for (r = 0; r < RMax * stepPerPixel; r++) { // перебираем все возможные расстояния от начала
-																	// координат
-							// Если решение уравнения достаточно хорошее (точность больше заданой)
-							if (
-								d == r
-								//Math.abs(distance - r) < accuracy
-							) {
-								Double v = f * RMax * stepPerPixel + r;
-								phaseMap[v.intValue()]++; // увеличиваем счетчик для этой точки фазового
-																			// пространства.
-								max = Math.max(phaseMap[v.intValue()], max);
-							}
-						}
-                        */
+						phaseMap[v.intValue()]++; // увеличиваем счетчик для этой точки фазового пространства.c
 					}
 				}
 			}
