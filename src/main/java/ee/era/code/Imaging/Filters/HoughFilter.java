@@ -23,18 +23,19 @@ import static java.lang.StrictMath.sin;
 public class HoughFilter implements BufferedImageOp {
 
 	public static final double GRAD_TO_RAD = Math.PI / 180.0f;
-	private double accuracy;
+	private double treshold;
 	private double stepPerGrad;
 	private double stepPerPixel;
 
 	public HoughFilter() {
 		stepPerGrad = 1.0f;
 		stepPerPixel = 1.0f;
-		accuracy = 0.1f;
+		treshold = 0.50f;
 	}
 
-	public HoughFilter(double accuracy, double stepPerGrad, double stepPerPixel) {
-		this.accuracy = accuracy;
+
+	public HoughFilter(double treshold, double stepPerGrad, double stepPerPixel) {
+		this.treshold = treshold;
 		this.stepPerGrad = stepPerGrad;
 		this.stepPerPixel = stepPerPixel;
 	}
@@ -58,12 +59,12 @@ public class HoughFilter implements BufferedImageOp {
 		this.stepPerPixel = stepPerPixel;
 	}
 
-	public double getAccuracy() {
-		return accuracy;
+	public double getTreshold() {
+		return treshold;
 	}
 
-	public void setAccuracy(double accuracy) {
-		this.accuracy = accuracy;
+	public void setTreshold(double treshold) {
+		this.treshold = treshold;
 	}
 
 	public double getStepPerGrad() {
@@ -115,13 +116,16 @@ public class HoughFilter implements BufferedImageOp {
 						Integer d = (int)Math.round(distance);
                         Double v = f * RMax * stepPerPixel + d;
 						phaseMap[v.intValue()]++; // увеличиваем счетчик для этой точки фазового пространства.c
+						max = Math.max(max, phaseMap[v.intValue()]);
 					}
 				}
 			}
 		}
+		double v = max * treshold;
 		for (int i = 0; i < phaseMap.length; i++) {
 
-			dstData[i] = (byte)(Math.round((double)phaseMap[i] * 255 / RMax));
+			if (phaseMap[i] > v)
+				dstData[i] = (byte) (phaseMap[i]);
 		}
 
 		WritableRaster wr = phaseData.createCompatibleWritableRaster(phase.getWidth(), phase.getHeight());

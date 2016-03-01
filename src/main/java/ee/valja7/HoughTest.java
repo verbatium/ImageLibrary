@@ -1,11 +1,11 @@
 package ee.valja7;
 
-import ee.era.code.Imaging.Filters.CannyEdgeDetector;
-import ee.era.code.Imaging.Filters.HoughFilter;
+import ee.era.code.Imaging.Filters.*;
 import sun.awt.image.ByteInterleavedRaster;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -16,48 +16,49 @@ import java.util.Map;
  */
 public class HoughTest {
     public static void main(String[] args) throws IOException {
-        HoughFilter houghFilter = new HoughFilter(1f, 3, 3);
+	    HoughFilter houghFilter = new HoughFilter(0.88f, 1, 1);
+	    //HoughFilter houghFilter = new HoughFilter(0.0f, 1, 1);
+	    // CannyEdgeDetector cannyEdgeDetector = new CannyEdgeDetector(1,6,0); // FFor root
+	    CannyEdgeDetector cannyEdgeDetector = new CannyEdgeDetector(1, 1, 0f); // FFor root
+	    GaussianBlur gaussianBlur = new GaussianBlur();
+	    gaussianBlur.setSigma(4.0f);
+	    Multuply multuply = new Multuply();
 
-        BufferedImage source = ImageIO.read(Main.class.getResourceAsStream("/star.bmp"));
+	    //BufferedImage dst = ImageIO.read(Main.class.getResourceAsStream("/BIGSTAR.png"));
+	    BufferedImage dst = ImageIO.read(Main.class.getResourceAsStream("/star.bmp"));
+	    dst = convertAndSave(dst, cannyEdgeDetector, "target/edges.png", null);
+	    dst = convertAndSave(dst, houghFilter, "target/hough.png", null);
+	    //printLines(dst, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
 
-        // CannyEdgeDetector cannyEdgeDetector = new CannyEdgeDetector(1,6,0); // FFor root
-        CannyEdgeDetector cannyEdgeDetector = new CannyEdgeDetector(1, 1, 0f); // FFor root
-        BufferedImage edges = cannyEdgeDetector.filter(source, null);
+	    //dst = convertAndSave(dst, houghFilter, "target/hough1.png", null);
+	    //printLines(dst, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
 
-        File outputfile = new File("target/edges.png");
-        ImageIO.write(edges, "png", outputfile);
+	    //dst =convertAndSave(dst,gaussianBlur,"target/blured.png", null);
+	    dst = convertAndSave(dst, new ExtremumFilter(), "target/extremums.png", null);
 
-        BufferedImage houghMap = houghFilter.filter(edges, null);
+	    //printLines(dst, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
 
-        printLines(houghMap, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
-
-
-        GaussianBlur gaussianBlur = new GaussianBlur();
-        gaussianBlur.setSigma(4.0f);
-        //cannyEdgeDetector = new CannyEdgeDetector(10, 100, 2.0f); // FFor root
-
-        houghMap = gaussianBlur.filter(houghMap, null);
-
-
-        ExtremumFilter extremumFilter = new ExtremumFilter();
-        houghMap = extremumFilter.filter(houghMap, null);
-
-        printLines(houghMap, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
-
-        outputfile = new File("target/HoughBLured.png");
-        ImageIO.write(houghMap, "png", outputfile);
+	    //BufferedImage hor = convertAndSave(dst, new SoebelFilter(SoebelFilter.HORIZONTAL), "target/SoebelH.png", null);
+	    //BufferedImage ver = convertAndSave(dst, new SoebelFilter(SoebelFilter.VERTICAL), "target/SoebelV.png", null);
+	    //dst = convertAndSave(hor, new SoebelFilter(SoebelFilter.VERTICAL), "target/multiplyed.png", ver);
     }
 
+	private static BufferedImage convertAndSave(BufferedImage houghMap, BufferedImageOp filter, String fileName, BufferedImage dst) throws IOException {
+		BufferedImage retVal = filter.filter(houghMap, dst);
+		ImageIO.write(retVal, "png", new File(fileName));
+		return retVal;
+	}
 
-    static void printLines(BufferedImage houghMap, double stepPerGrad, double stepPerPixel) {
-        ByteInterleavedRaster phaseData = (ByteInterleavedRaster) houghMap.getData();
+
+	static void printLines(BufferedImage houghMap, double stepPerGrad, double stepPerPixel) {
+		ByteInterleavedRaster phaseData = (ByteInterleavedRaster) houghMap.getData();
         byte[] phaseMap = phaseData.getDataStorage();
 
         Map<Integer, Integer> toSort = new HashMap<>();
 
         for (int i = 0; i < phaseMap.length; i++) {
-            if ((phaseMap[i] & 0xFF) > 60)
-                toSort.put(i, phaseMap[i] & 0xFF);
+	        if ((phaseMap[i] & 0xFF) > 0)
+		        toSort.put(i, phaseMap[i] & 0xFF);
         }
         // toSort = sortByValue(toSort);
         toSort = HoughFilter.sortByValue(toSort);
@@ -72,24 +73,7 @@ public class HoughTest {
             System.out.printf("angle = %2f°, distance = %2f, line weight = %2d%n", freq, dist, Math.round((double) toSort.get(i)
                     * rMax / 255));
 		}
-		outputfile = new File("target/Hough.png");
-		ImageIO.write(houghMap, "png", outputfile);
-		GaussianBlur gaussianBlur = new GaussianBlur();
-		gaussianBlur.setSigma(3);
-		gaussianBlur.setSize(1);
-		houghMap = gaussianBlur.filter(houghMap, null);
-		outputfile = new File("target/HoughBlured.png");
-		ImageIO.write(houghMap, "png", outputfile);
 
-		SoebelFilter soebelFilter = new SoebelFilter(SoebelFilter.HORIZONTAL);
-		houghMap = soebelFilter.filter(houghMap, null);
-		outputfile = new File("target/SoebelH.png");
-		ImageIO.write(houghMap, "png", outputfile);
-
-		soebelFilter = new SoebelFilter(SoebelFilter.VERTICAL);
-		houghMap = soebelFilter.filter(houghMap, null);
-		outputfile = new File("target/SoebelV.png");
-		ImageIO.write(houghMap, "png", outputfile);
 
     }
 }
