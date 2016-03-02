@@ -36,7 +36,7 @@ public class HoughTest {
 	    //dst =convertAndSave(dst,gaussianBlur,"target/blured.png", null);
 	    dst = convertAndSave(dst, new ExtremumFilter(), "target/extremums.png", null);
 
-	    //printLines(dst, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
+	    printLines(dst, houghFilter.getStepPerGrad(), houghFilter.getStepPerPixel());
 
 	    //BufferedImage hor = convertAndSave(dst, new SoebelFilter(SoebelFilter.HORIZONTAL), "target/SoebelH.png", null);
 	    //BufferedImage ver = convertAndSave(dst, new SoebelFilter(SoebelFilter.VERTICAL), "target/SoebelV.png", null);
@@ -48,7 +48,6 @@ public class HoughTest {
 		ImageIO.write(retVal, "png", new File(fileName));
 		return retVal;
 	}
-
 
 	static void printLines(BufferedImage houghMap, double stepPerGrad, double stepPerPixel) {
 		ByteInterleavedRaster phaseData = (ByteInterleavedRaster) houghMap.getData();
@@ -70,10 +69,12 @@ public class HoughTest {
             Double dist = (i / rMax) / stepPerPixel;
             Double freq = (i - (i / rMax) * rMax) / stepPerGrad;
 
-            System.out.printf("angle = %2f°, distance = %2f, line weight = %2d%n", freq, dist, Math.round((double) toSort.get(i)
+	        Double x = Math.cos(freq);
+	        Double y = Math.sin(freq);
+	        Double k = -dist;
+	        System.out.printf("x = [%2.3f,0], y = [0,%2.3f]%n", k * x, k * y);
+	        System.out.printf("angle = %2f°, distance = %2f, line weight = %2d%n", freq, dist, Math.round((double) toSort.get(i)
                     * rMax / 255));
 		}
-
-
     }
 }
