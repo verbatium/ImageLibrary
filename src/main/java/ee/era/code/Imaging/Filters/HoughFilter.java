@@ -23,6 +23,7 @@ import static java.lang.StrictMath.sin;
 public class HoughFilter implements BufferedImageOp {
 
 	public static final double GRAD_TO_RAD = Math.PI / 180.0f;
+	public static final int GRAD = 360;
 	private double treshold;
 	private double stepPerGrad;
 	private double stepPerPixel;
@@ -87,7 +88,7 @@ public class HoughFilter implements BufferedImageOp {
 		// картинка для хранения фазового пространства Хафа (r, f)
 		// 0 < r < RMax
 		// 0 < f < 2*PI
-		BufferedImage phase = new BufferedImage( (int)Math.round(RMax * stepPerPixel), (int)Math.round(180 * stepPerGrad), BufferedImage.TYPE_BYTE_GRAY);
+		BufferedImage phase = new BufferedImage((int) Math.round(RMax * stepPerPixel), (int) Math.round(GRAD * stepPerGrad), BufferedImage.TYPE_BYTE_GRAY);
 		int x = 0, y = 0, r = 0, f = 0;
 		double theta = 0;
 		ByteInterleavedRaster bin = (ByteInterleavedRaster)src.getData();
@@ -107,7 +108,7 @@ public class HoughFilter implements BufferedImageOp {
 					// рассмотрим все возможные прямые, которые могут
 					// проходить через эту точку
 
-					for (f = 0; f < 180 * stepPerGrad; f++) { // перебираем все возможные углы наклона
+					for (f = 0; f < GRAD * stepPerGrad; f++) { // перебираем все возможные углы наклона
 
 						double grad = (double)f / stepPerGrad;
 						theta = GRAD_TO_RAD * grad; // переводим градусы в радианы
